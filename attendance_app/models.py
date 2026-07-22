@@ -9,9 +9,9 @@ class Student(models.Model):
 
     student_id = models.CharField(max_length=50, unique=True)
     full_name = models.CharField(max_length=100)
-    gender = models.CharField(max_length=1, choices=GENDER_CHOICES)
-    student_class = models.CharField(max_length=50) # e.g., ND1, HND2
-    course_offered = models.CharField(max_length=100) # e.g., OTM, Computer Science
+    gender = models.CharField(max_length=1, choices=GENDER_CHOICES, default='M')
+    student_class = models.CharField(max_length=50, default='General')
+    course_offered = models.CharField(max_length=100, default='General')
 
     def __str__(self):
         return f"{self.full_name} ({self.student_id})"
@@ -25,8 +25,7 @@ class Attendance(models.Model):
 
     @property
     def formatted_timestamp(self):
-        # Format: HH:MM:SS DDMMYY
         return self.timestamp.strftime("%H:%M:%S %d%m%y")
 
-    class Meta:
-        unique_together = ('student', 'timestamp')
+    def __str__(self):
+        return f"{self.student.full_name} - {self.formatted_timestamp}"
