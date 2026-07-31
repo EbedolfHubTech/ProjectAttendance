@@ -26,27 +26,36 @@ def load_data():
     id_col = next((c for c in df.columns if 'id' in c), None)
     name_col = next((c for c in df.columns if 'name' in c), None)
     course_col = next((c for c in df.columns if 'course' in c or 'class' in c or 'module' in c), None)
+    gender_col = next((c for c in df.columns if 'gender' in c or 'sex' in c), None)
     
-    if not id_col or not name_col or not course_col:
-        print("❌ Error: Could not automatically map columns.")
-        print(f"Detected mapping -> ID: {id_col}, Name: {name_col}, Course: {course_col}")
+    if not id_col or not name_col:
+        print("❌ Error: Could not automatically map essential columns (ID & Name).")
+        print(f"Detected mapping -> ID: {id_col}, Name: {name_col}")
         return
         
     students_to_create = []
     print(f"Processing {len(df)} records... Please wait.")
     
     for index, row in df.iterrows():
-        # Clean data into plain strings
-        s_id = str(row[id_col]).strip()
-        s_name = str(row[name_col]).strip()
-        s_course = str(row[course_col]).strip()
+        # Safely extract values and filter out NaN / empty values
+        s_id = str(row[id_col]).strip() if pd.notna(row[id_col]) else None
+        s_name = str(row[name_col]).strip() if pd.notna(row[name_col]) else ''
+        s_course = str(row[course_col]).strip() if course_col and pd.notna(row[course_col]) else ''
+        s_gender = str(row[gender_col]).strip() if gender_col and pd.notna(row[gender_col]) else 'Other'
         
+        # Skip rows missing a Student ID or invalid IDs like 'nan'
+        if not s_id or s_id.lower() == 'nan':
+            continue
+            
+        # Avoid duplicate database entries
         if not Student.objects.filter(student_id=s_id).exists():
             students_to_create.append(
                 Student(
                     student_id=s_id,
-                    name=s_name,
-                    course=s_course
+                    full_name=s_name,          # Corrected model field name
+                    gender=s_gender,            # Added gender field
+                    student_class=s_course,     # Corrected model field name
+                    course_offered=s_course     # Corrected model field name
                 )
             )
             

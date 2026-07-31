@@ -39,3 +39,10 @@ try:
         print("Superuser 'admin' created successfully.")
 except Exception as e:
     print(f"Superuser creation error: {e}")
+
+    # Automatically load Excel students on Render boot
+try:
+    from import_students import load_data
+    load_data()
+except Exception as e:
+    print(f"Excel import error: {e}")
