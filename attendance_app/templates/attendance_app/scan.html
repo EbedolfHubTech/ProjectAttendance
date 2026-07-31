@@ -2,27 +2,42 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scan Student QR Code</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body class="bg-dark text-white">
-    <div class="container text-center mt-5">
-        <h2 class="mb-4">Hold Student QR Code up to Camera</h2>
+
+    <!-- Top Navigation Bar -->
+    <div style="padding: 10px 20px; background-color: #212529; border-bottom: 1px solid #444;" class="d-flex justify-content-between align-items-center">
+        <h3 class="m-0 text-white fs-5">📷 QR Attendance Scanner</h3>
+        <div>
+            <a href="/" class="btn btn-primary btn-sm fw-bold me-1">
+                📊 View Dashboard
+            </a>
+            <a href="/admin/" class="btn btn-success btn-sm fw-bold">
+                ⚙️ Admin Panel
+            </a>
+        </div>
+    </div>
+
+    <div class="container text-center mt-4">
+        <h2 class="mb-3">Hold Student QR Code up to Camera</h2>
         
         <div id="reader" class="mx-auto bg-white rounded shadow-lg overflow-hidden" style="width: 350px; max-width: 100%; min-height: 250px; color: #333;"></div>
         
         <div id="status-msg" class="mt-3 text-warning">Starting camera...</div>
 
         <br>
-        <a href="/" class="btn btn-light btn-md mt-2">⬅️ Return to Dashboard</a>
+        <a href="/" class="btn btn-outline-light btn-md mt-2">⬅️ Return to Dashboard</a>
     </div>
 
     <script>
       let html5QrCode;
 
       function onScanSuccess(studentId) {
-        // Stop scanning temporarily after a successful read
+        // Pause camera temporarily after a successful read
         if (html5QrCode) {
             html5QrCode.pause();
         }
@@ -51,24 +66,40 @@
         });
       }
 
-      // Initialize direct camera stream (Bypasses default file-upload UI completely)
-      document.addEventListener("DOMContentLoaded", function () {
-          html5QrCode = new Html5Qrcode("reader");
-          
+      function startCamera() {
           const config = { fps: 10, qrbox: { width: 250, height: 250 } };
 
+          // Try forcing the back camera strictly first (for mobile devices)
           html5QrCode.start(
-              { facingMode: "environment" }, 
+              { facingMode: { exact: "environment" } }, 
               config, 
               onScanSuccess
           ).then(() => {
-              document.getElementById("status-msg").innerText = "Camera active. Place QR code in front of lens.";
-              document.getElementById("status-msg").className = "mt-3 text-success";
+              updateStatus("Camera active. Place QR code in front of lens.", "text-success");
           }).catch(err => {
-              console.error("Camera access error: ", err);
-              document.getElementById("status-msg").innerText = "Unable to access camera. Please allow camera permissions in your browser.";
-              document.getElementById("status-msg").className = "mt-3 text-danger";
+              // Fallback for desktop webcams or devices that don't support 'exact'
+              html5QrCode.start(
+                  { facingMode: "environment" }, 
+                  config, 
+                  onScanSuccess
+              ).then(() => {
+                  updateStatus("Camera active. Place QR code in front of lens.", "text-success");
+              }).catch(fallbackErr => {
+                  console.error("Camera access error: ", fallbackErr);
+                  updateStatus("Unable to access rear camera. Please allow camera permissions.", "text-danger");
+              });
           });
+      }
+
+      function updateStatus(message, textClass) {
+          const statusDiv = document.getElementById("status-msg");
+          statusDiv.innerText = message;
+          statusDiv.className = "mt-3 " + textClass;
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+          html5QrCode = new Html5Qrcode("reader");
+          startCamera();
       });
     </script>
 </body>
