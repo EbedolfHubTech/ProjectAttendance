@@ -44,7 +44,7 @@ def attendance_report(request):
     chart_grouping = request.GET.get('chart_grouping', 'day') # time, day, week, month, year
     selected_class = request.GET.get('student_class', '')
     selected_course = request.GET.get('course_offered', '')
-    selected_gender = request.GET.get('gender', '')
+    selected_gender = request.GET.get('gender', '').strip()
 
     attendance_records = Attendance.objects.select_related('student').all()
 
@@ -61,8 +61,17 @@ def attendance_report(request):
         attendance_records = attendance_records.filter(student__student_class=selected_class)
     if selected_course:
         attendance_records = attendance_records.filter(student__course_offered=selected_course)
+
+    # Updated Gender Filter (Handles 'M', 'Male', 'F', and 'Female')
     if selected_gender:
-        attendance_records = attendance_records.filter(student__gender=selected_gender)
+        if selected_gender in ['M', 'Male', 'male']:
+            attendance_records = attendance_records.filter(
+                Q(student__gender__iexact='M') | Q(student__gender__iexact='Male')
+            )
+        elif selected_gender in ['F', 'Female', 'female']:
+            attendance_records = attendance_records.filter(
+                Q(student__gender__iexact='F') | Q(student__gender__iexact='Female')
+            )
 
     # Dynamic Chart Grouping (Truncation)
     if chart_grouping == 'time':
